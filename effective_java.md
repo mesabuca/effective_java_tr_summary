@@ -588,3 +588,120 @@ Object sınıfı belirtiminde tarif edildiği üzere sözleşme genel olarak şu
 * Eğer iki nesne `equals` metoduna göre birbirine eşitse, bu iki nesnenin `hashCode` metotları da aynı integer değerini üretmelidir.
 
 * Eğer iki nesne `equals` metoduna göre eşit değilse, `hashCode` metodu bu iki nesne için farklı integer sonuçları üretmek zorunda değildir. Ancak yazılımcı bilmelidir ki eşit olmayan nesneler için farklı `hash` kodları üretmek `hash table` performansını artırabilir.
+
+Eşit nesneler eşit hash kodu üretmelidir diğer türlü 2. koşulu ihlal etmiş olursunuz.
+
+```java
+Map<PhoneNumber, String> m = new HashMap<>();
+m.put(new PhoneNumber(707, 867, 5309), "Jenny");
+```
+Bu noktada `m.get(new PhoneNumber(707, 867, 5309))` çağrısının “Jenny” değerini döndürmesini bekleyebilirsiniz ancak `null` dönecektir.
+
+Bu problemi çözmek için `PhoneNumber` sınıfı içerisine uygun bir hashCode metodu yazmak gereklidir.
+
+```java
+// The worst possible legal hashCode implementation - never use!
+@Override public int hashCode() { return 42; }
+```
+
+Bu metod hashCode sözleşmesine uygundur fakat yine de kötü bir koddur.
+```// hashCode method with lazily initialized cached hash code
+private int hashCode; // Automatically initialized to 0
+@Override public int hashCode() {
+  int result = hashCode;
+  if (result == 0) {
+    result = Short.hashCode(areaCode);
+    result = 31 * result + Short.hashCode(prefix);
+    result = 31 * result + Short.hashCode(lineNum);
+    hashCode = result;
+  }
+  return result;
+}
+```
+
+### Item 12 - `toString()` Metodunu Her Zaman Geçersiz Kılın
+
+Yeni oluşturulan bir nesnede `toString()` metodunu overrıde etmezseniz içinde bulundurduğu değerlerden alamsız bir çıktı verir. Özellikle başka nesnelerden türüyen sınıflarda.
+
+Elverişli durumlarda `toString()` metodu nesne içerisindeki bütün önemli alanları içeren bir karakter dizisi döndürmelidir.
+
+Ayrıca yorum satırlarıyla o methodu override ederken niyetinizin ne oldugunuda belirtmek sizden sonra gelecek
+
+
+### Item 13 - `clone()` Methodunu Mantıklı Override Edin
+
+Klonlarken uyulması gereken bazı kurallar vardır. Bu bölümde de Item 10 da bahsettiğimiz kurallara uymanız gerekmektedr.
+
+### Item 14 - Comparable Arayüzünü Gerektiğinde Uygulayın
+
+```java
+public class WordList {
+  public static void main(String[] args) {
+    Set<String>; s = new TreeSet<String>();
+    Collections.addAll(s, args);
+    System.out.println(s);
+  }
+}
+```
+
+Buraya `Comparable` arayüzünü uygulayarak bir çok metodu bu class'a uygulayabiliriz fakat eğer diğerlerinide ullanmıyacaksanız bu sadece performans kaybına sebep olur. Mesela şuu gibi bir işlem için
+
+```java
+public interface Comparable<T> {
+  int compareTo(T t);
+}
+```
+
+Buradaki kurallarda yine aynı şekilde Item 10 daki kurallar gibidir.
+
+### Item 15 - Sınıfların ve Üyelerinin Erişilebilirliğini Kısıtlayın
+
+Bilgi saklama konsepti birçok açıdan önemlidir. En önemli faydası ise yazılım modüllerini birbirinden ayrıştırarak (decoupling) birbirinden bağımsız bir şekilde geliştirilebilmesini, test edilebilmesini ve kullanılabilmesini sağlamaktır.
+
+Bu sebepten dolayı dışarıdan erişimin faydası olmayacak alanları private veya API ise protected a almak daha faydalı olacaktır.
+
+### Item 16 - `public` Sınıflarda Erişim Metotları Kullanın, `public` Alanlar Değil
+
+Eğer bir sınıf paket dışından erişilebiliyorsanız mutlaka erişim metotları sağlayın. Bu size ileride sınıfın iç yapısında değişiklik yapmanızı kolaylaştırır.
+
+`public` bir sınıfın veri alanlarını dışarıya açık olsa dahi bu alanlar değiştirilemez olması çoğunlukla daha iyidir.
+
+```java
+// Public class with exposed immutable fields - questionable
+public final class Time {
+  private static final int HOURS_PER_DAY = 24;
+  private static final int MINUTES_PER_HOUR = 60;
+  public final int hour;
+  public final int minute;
+  public Time(int hour, int minute) {
+    if (hour < 0 || hour >= HOURS_PER_DAY)
+    throw new IllegalArgumentException("Hour: " + hour);
+    if (minute < 0 || minute >= MINUTES_PER_HOUR)
+    throw new IllegalArgumentException("Min: " + minute);
+    this.hour = hour;
+    this.minute = minute;
+  }
+  ... // Remainder omitted
+}
+```
+
+### Item 17 - Mutability Kısıtlayın
+
+Mutability bir sınıfın fieldlarının sonradan değişememesidir. Nesneleri üzerinde değişiklik yapılamayan sınıflara da `immutable` denir.
+
+Eğer bir sınıfı immutable yapacaksanız aşşağıdaki 4 kuralı uygulayın
+
+- Nesnenin durumunu değiştiren hiçbir metot tanımlamayın.
+
+- Eğer gerekmiyorsa  sınıfı kalıtılamaz hale getirin. Genelde bunun gibi field ve class'lar içi `final` anahtar kelimesi kullanılır.
+
+- Sınıftaki bütün alanları private olarak tanımlayın
+
+- Değişebilir alanlara olan erişimi kısıtlayın. Eğer değişmez sınıf içerisinde değişebilir nesnelere referanslar varsa, istemcilerinizin bu referanslara erişemediğinden emin olun.
+
+### Item 18 - Kalıtım Yerine Komposizyonu Kullanın
+
+
+
+
+To be continued ...
